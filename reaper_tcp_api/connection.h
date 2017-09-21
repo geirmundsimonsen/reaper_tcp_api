@@ -1,8 +1,5 @@
 #pragma once
 
-// ThrowawayClient.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
 
 #include <winsock2.h>
@@ -11,23 +8,7 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
-
-/*
-char char0[8192];
-char char1[8192];
-char char2[8192];
-char char3[8192];
-*/
-
-
-
 int connect() {
-
-	/*
-	functions[0] = call_InsertTrackAtIndex;
-	functions[1] = call_GetMediaItemInfo_Value;
-	functions[2] = call_PCM_Source_GetSectionInfo;
-	*/
 
 	WSADATA wsaData;
 
@@ -215,6 +196,17 @@ int connect() {
 
 
 		if (bytes_to_send != 0) {
+			char bytes_to_read[4];
+			memcpy(bytes_to_read, &bytes_to_send, 4);
+			iResult = send(ConnectSocket, bytes_to_read, 4, 0);
+
+			if (iResult == SOCKET_ERROR) {
+
+				closesocket(ConnectSocket);
+				WSACleanup();
+				return 1;
+			}
+
 			iResult = send(ConnectSocket, sendrecvbuf, bytes_to_send, 0);
 
 			if (iResult == SOCKET_ERROR) {
