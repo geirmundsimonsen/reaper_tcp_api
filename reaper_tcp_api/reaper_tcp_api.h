@@ -1,8 +1,8 @@
 constexpr int tcpbuflength = 100000;
 char sendrecvbuf[tcpbuflength];
 int(*functions[607])();
-char charbuf0[4097];
-char charbuf1[4097];
+char charbuf0[65536];
+char charbuf1[65536];
 
 int call_AddMediaItemToTrack() {
 int buf_index = 4;
@@ -196,6 +196,20 @@ buf_index = 0;
 return buf_index; 
 }
 
+int call_ColorFromNative() {
+int buf_index = 4;
+int col = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int rOut;
+int gOut;
+int bOut;
+ColorFromNative(col, &rOut, &gOut, &bOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &rOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &gOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &bOut, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_ColorToNative() {
 int buf_index = 4;
 int r = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
@@ -222,6 +236,19 @@ ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int retval = CountMediaItems(proj);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+return buf_index; 
+}
+
+int call_CountProjectMarkers() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int num_markersOut;
+int num_regionsOut;
+int retval = CountProjectMarkers(proj, &num_markersOut, &num_regionsOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &num_markersOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &num_regionsOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -938,6 +965,17 @@ buf_index = 0;
 return buf_index; 
 }
 
+int call_DockIsChildOfDock() {
+int buf_index = 4;
+HWND hwnd; memcpy(&hwnd, &sendrecvbuf[buf_index], 8); buf_index += 8;
+bool isFloatingDockerOut;
+int retval = DockIsChildOfDock(hwnd, &isFloatingDockerOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+sendrecvbuf[buf_index] = isFloatingDockerOut ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
 int call_DockWindowActivate() {
 int buf_index = 4;
 HWND hwnd; memcpy(&hwnd, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -1034,7 +1072,7 @@ return buf_index;
 int call_EnumProjects() {
 int buf_index = 4;
 int idx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-ReaProject* retval = EnumProjects(idx, charbuf0, 4096);
+ReaProject* retval = EnumProjects(idx, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1046,7 +1084,7 @@ int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
 const char* extname = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(extname);
 int idx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = EnumProjExtState(proj, extname, idx, charbuf0, 4096, charbuf1, 4096);
+bool retval = EnumProjExtState(proj, extname, idx, charbuf0, 65535, charbuf1, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1069,7 +1107,7 @@ int call_EnumTrackMIDIProgramNames() {
 int buf_index = 4;
 int track = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int programNumber = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = EnumTrackMIDIProgramNames(track, programNumber, charbuf0, 4096);
+bool retval = EnumTrackMIDIProgramNames(track, programNumber, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1081,10 +1119,30 @@ int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int programNumber = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = EnumTrackMIDIProgramNamesEx(proj, track, programNumber, charbuf0, 4096);
+bool retval = EnumTrackMIDIProgramNamesEx(proj, track, programNumber, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_Envelope_Evaluate() {
+int buf_index = 4;
+TrackEnvelope* envelope; memcpy(&envelope, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double time = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+double samplerate = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+int samplesRequested = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double valueOutOptional;
+double dVdSOutOptional;
+double ddVdSOutOptional;
+double dddVdSOutOptional;
+int retval = Envelope_Evaluate(envelope, time, samplerate, samplesRequested, &valueOutOptional, &dVdSOutOptional, &ddVdSOutOptional, &dddVdSOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &valueOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &dVdSOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &ddVdSOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &dddVdSOutOptional, 8); buf_index += 8;
 return buf_index; 
 }
 
@@ -1092,9 +1150,35 @@ int call_Envelope_FormatValue() {
 int buf_index = 4;
 TrackEnvelope* env; memcpy(&env, &sendrecvbuf[buf_index], 8); buf_index += 8;
 double value = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
-Envelope_FormatValue(env, value, charbuf0, 4096);
+Envelope_FormatValue(env, value, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_Envelope_GetParentTake() {
+int buf_index = 4;
+TrackEnvelope* env; memcpy(&env, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int indexOutOptional;
+int index2OutOptional;
+MediaItem_Take* retval = Envelope_GetParentTake(env, &indexOutOptional, &index2OutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &indexOutOptional, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &index2OutOptional, 4); buf_index += 4;
+return buf_index; 
+}
+
+int call_Envelope_GetParentTrack() {
+int buf_index = 4;
+TrackEnvelope* env; memcpy(&env, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int indexOutOptional;
+int index2OutOptional;
+MediaTrack* retval = Envelope_GetParentTrack(env, &indexOutOptional, &index2OutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &indexOutOptional, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &index2OutOptional, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -1139,7 +1223,7 @@ return buf_index;
 int call_format_timestr() {
 int buf_index = 4;
 double tpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
-format_timestr(tpos, charbuf0, 4096);
+format_timestr(tpos, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1150,7 +1234,7 @@ int buf_index = 4;
 double tpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
 double offset = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
 int modeoverride = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-format_timestr_len(tpos, charbuf0, 4096, offset, modeoverride);
+format_timestr_len(tpos, charbuf0, 65535, offset, modeoverride);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1160,7 +1244,7 @@ int call_format_timestr_pos() {
 int buf_index = 4;
 double tpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
 int modeoverride = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-format_timestr_pos(tpos, charbuf0, 4096, modeoverride);
+format_timestr_pos(tpos, charbuf0, 65535, modeoverride);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1300,10 +1384,30 @@ return buf_index;
 int call_GetEnvelopeName() {
 int buf_index = 4;
 TrackEnvelope* env; memcpy(&env, &sendrecvbuf[buf_index], 8); buf_index += 8;
-bool retval = GetEnvelopeName(env, charbuf0, 4096);
+bool retval = GetEnvelopeName(env, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_GetEnvelopePoint() {
+int buf_index = 4;
+TrackEnvelope* envelope; memcpy(&envelope, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int ptidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double timeOutOptional;
+double valueOutOptional;
+int shapeOutOptional;
+double tensionOutOptional;
+bool selectedOutOptional;
+bool retval = GetEnvelopePoint(envelope, ptidx, &timeOutOptional, &valueOutOptional, &shapeOutOptional, &tensionOutOptional, &selectedOutOptional);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &timeOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &valueOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &shapeOutOptional, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &tensionOutOptional, 8); buf_index += 8;
+sendrecvbuf[buf_index] = selectedOutOptional ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
@@ -1330,7 +1434,7 @@ int call_GetEnvelopeStateChunk() {
 int buf_index = 4;
 TrackEnvelope* env; memcpy(&env, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool isundoOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = GetEnvelopeStateChunk(env, charbuf0, 4096, isundoOptional);
+bool retval = GetEnvelopeStateChunk(env, charbuf0, 65535, isundoOptional);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1352,6 +1456,20 @@ const char* key = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(key);
 const char* retval = GetExtState(section, key);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], retval, 1 + strlen(retval)); buf_index += 1 + strlen(retval);
+return buf_index; 
+}
+
+int call_GetFocusedFX() {
+int buf_index = 4;
+int tracknumberOut;
+int itemnumberOut;
+int fxnumberOut;
+int retval = GetFocusedFX(&tracknumberOut, &itemnumberOut, &fxnumberOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &tracknumberOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &itemnumberOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &fxnumberOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -1402,6 +1520,17 @@ memcpy(&sendrecvbuf[buf_index], retval, 1 + strlen(retval)); buf_index += 1 + st
 return buf_index; 
 }
 
+int call_GetInputOutputLatency() {
+int buf_index = 4;
+int inputlatencyOut;
+int outputLatencyOut;
+GetInputOutputLatency(&inputlatencyOut, &outputLatencyOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &inputlatencyOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &outputLatencyOut, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_GetItemProjectContext() {
 int buf_index = 4;
 MediaItem* item; memcpy(&item, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -1415,7 +1544,7 @@ int call_GetItemStateChunk() {
 int buf_index = 4;
 MediaItem* item; memcpy(&item, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool isundoOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = GetItemStateChunk(item, charbuf0, 4096, isundoOptional);
+bool retval = GetItemStateChunk(item, charbuf0, 65535, isundoOptional);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1427,6 +1556,33 @@ int buf_index = 4;
 const char* retval = GetLastColorThemeFile();
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], retval, 1 + strlen(retval)); buf_index += 1 + strlen(retval);
+return buf_index; 
+}
+
+int call_GetLastMarkerAndCurRegion() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double time = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+int markeridxOut;
+int regionidxOut;
+GetLastMarkerAndCurRegion(proj, time, &markeridxOut, &regionidxOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &markeridxOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &regionidxOut, 4); buf_index += 4;
+return buf_index; 
+}
+
+int call_GetLastTouchedFX() {
+int buf_index = 4;
+int tracknumberOut;
+int fxnumberOut;
+int paramnumberOut;
+bool retval = GetLastTouchedFX(&tracknumberOut, &fxnumberOut, &paramnumberOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &tracknumberOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &fxnumberOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &paramnumberOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -1584,9 +1740,20 @@ return buf_index;
 int call_GetMediaSourceFileName() {
 int buf_index = 4;
 PCM_source* source; memcpy(&source, &sendrecvbuf[buf_index], 8); buf_index += 8;
-GetMediaSourceFileName(source, charbuf0, 4096);
+GetMediaSourceFileName(source, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_GetMediaSourceLength() {
+int buf_index = 4;
+PCM_source* source; memcpy(&source, &sendrecvbuf[buf_index], 8); buf_index += 8;
+bool lengthIsQNOut;
+double retval = GetMediaSourceLength(source, &lengthIsQNOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+sendrecvbuf[buf_index] = lengthIsQNOut ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
@@ -1620,7 +1787,7 @@ return buf_index;
 int call_GetMediaSourceType() {
 int buf_index = 4;
 PCM_source* source; memcpy(&source, &sendrecvbuf[buf_index], 8); buf_index += 8;
-GetMediaSourceType(source, charbuf0, 4096);
+GetMediaSourceType(source, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1639,7 +1806,7 @@ return buf_index;
 int call_GetMIDIInputName() {
 int buf_index = 4;
 int dev = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = GetMIDIInputName(dev, charbuf0, 4096);
+bool retval = GetMIDIInputName(dev, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1649,7 +1816,7 @@ return buf_index;
 int call_GetMIDIOutputName() {
 int buf_index = 4;
 int dev = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = GetMIDIOutputName(dev, charbuf0, 4096);
+bool retval = GetMIDIOutputName(dev, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1668,9 +1835,20 @@ int call_GetMouseModifier() {
 int buf_index = 4;
 const char* context = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(context);
 int modifier_flag = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-GetMouseModifier(context, modifier_flag, charbuf0, 4096);
+GetMouseModifier(context, modifier_flag, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_GetMousePosition() {
+int buf_index = 4;
+int xOut;
+int yOut;
+GetMousePosition(&xOut, &yOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &xOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &yOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -1751,7 +1929,7 @@ return buf_index;
 int call_GetPeakFileName() {
 int buf_index = 4;
 const char* fn = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(fn);
-GetPeakFileName(fn, charbuf0, 4096);
+GetPeakFileName(fn, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1761,7 +1939,7 @@ int call_GetPeakFileNameEx() {
 int buf_index = 4;
 const char* fn = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(fn);
 bool forWrite = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-GetPeakFileNameEx(fn, charbuf0, 4096, forWrite);
+GetPeakFileNameEx(fn, charbuf0, 65535, forWrite);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1772,7 +1950,7 @@ int buf_index = 4;
 const char* fn = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(fn);
 bool forWrite = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
 const char* peaksfileextension = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(peaksfileextension);
-GetPeakFileNameEx2(fn, charbuf0, 4096, forWrite, peaksfileextension);
+GetPeakFileNameEx2(fn, charbuf0, 65535, forWrite, peaksfileextension);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1841,7 +2019,7 @@ return buf_index;
 int call_GetProjectName() {
 int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
-GetProjectName(proj, charbuf0, 4096);
+GetProjectName(proj, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1849,7 +2027,7 @@ return buf_index;
 
 int call_GetProjectPath() {
 int buf_index = 4;
-GetProjectPath(charbuf0, 4096);
+GetProjectPath(charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1858,7 +2036,7 @@ return buf_index;
 int call_GetProjectPathEx() {
 int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
-GetProjectPathEx(proj, charbuf0, 4096);
+GetProjectPathEx(proj, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -1883,12 +2061,35 @@ memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
 }
 
+int call_GetProjectTimeSignature() {
+int buf_index = 4;
+double bpmOut;
+double bpiOut;
+GetProjectTimeSignature(&bpmOut, &bpiOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &bpmOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &bpiOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_GetProjectTimeSignature2() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double bpmOut;
+double bpiOut;
+GetProjectTimeSignature2(proj, &bpmOut, &bpiOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &bpmOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &bpiOut, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_GetProjExtState() {
 int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
 const char* extname = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(extname);
 const char* key = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(key);
-int retval = GetProjExtState(proj, extname, key, charbuf0, 4096);
+int retval = GetProjExtState(proj, extname, key, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1952,10 +2153,54 @@ memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
 }
 
+int call_GetSet_ArrangeView2() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+bool isSet = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int screen_x_start = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int screen_x_end = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double start_timeOut;
+double end_timeOut;
+GetSet_ArrangeView2(proj, isSet, screen_x_start, screen_x_end, &start_timeOut, &end_timeOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &start_timeOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &end_timeOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_GetSet_LoopTimeRange() {
+int buf_index = 4;
+bool isSet = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool isLoop = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double startOut;
+double endOut;
+bool allowautoseek = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+GetSet_LoopTimeRange(isSet, isLoop, &startOut, &endOut, allowautoseek);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &startOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &endOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_GetSet_LoopTimeRange2() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+bool isSet = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool isLoop = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double startOut;
+double endOut;
+bool allowautoseek = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+GetSet_LoopTimeRange2(proj, isSet, isLoop, &startOut, &endOut, allowautoseek);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &startOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &endOut, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_GetSetEnvelopeState() {
 int buf_index = 4;
 TrackEnvelope* env; memcpy(&env, &sendrecvbuf[buf_index], 8); buf_index += 8;
-bool retval = GetSetEnvelopeState(env, charbuf0, 4096);
+bool retval = GetSetEnvelopeState(env, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1966,7 +2211,7 @@ int call_GetSetEnvelopeState2() {
 int buf_index = 4;
 TrackEnvelope* env; memcpy(&env, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool isundo = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = GetSetEnvelopeState2(env, charbuf0, 4096, isundo);
+bool retval = GetSetEnvelopeState2(env, charbuf0, 65535, isundo);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1976,7 +2221,7 @@ return buf_index;
 int call_GetSetItemState() {
 int buf_index = 4;
 MediaItem* item; memcpy(&item, &sendrecvbuf[buf_index], 8); buf_index += 8;
-bool retval = GetSetItemState(item, charbuf0, 4096);
+bool retval = GetSetItemState(item, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -1987,7 +2232,7 @@ int call_GetSetItemState2() {
 int buf_index = 4;
 MediaItem* item; memcpy(&item, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool isundo = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = GetSetItemState2(item, charbuf0, 4096, isundo);
+bool retval = GetSetItemState2(item, charbuf0, 65535, isundo);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -2022,7 +2267,7 @@ int call_GetSetProjectAuthor() {
 int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool set = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-GetSetProjectAuthor(proj, set, charbuf0, 4096);
+GetSetProjectAuthor(proj, set, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -2032,7 +2277,7 @@ int call_GetSetProjectNotes() {
 int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool set = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-GetSetProjectNotes(proj, set, charbuf0, 4096);
+GetSetProjectNotes(proj, set, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -2060,7 +2305,7 @@ return buf_index;
 int call_GetSetTrackState() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
-bool retval = GetSetTrackState(track, charbuf0, 4096);
+bool retval = GetSetTrackState(track, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -2071,7 +2316,7 @@ int call_GetSetTrackState2() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool isundo = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = GetSetTrackState2(track, charbuf0, 4096, isundo);
+bool retval = GetSetTrackState2(track, charbuf0, 65535, isundo);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -2135,6 +2380,20 @@ memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 return buf_index; 
 }
 
+int call_GetTakeStretchMarker() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int idx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double posOut;
+double srcposOutOptional;
+int retval = GetTakeStretchMarker(take, idx, &posOut, &srcposOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &posOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &srcposOutOptional, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_GetTakeStretchMarkerSlope() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -2142,6 +2401,61 @@ int idx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 double retval = GetTakeStretchMarkerSlope(take, idx);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_GetTCPFXParm() {
+int buf_index = 4;
+ReaProject* project; memcpy(&project, &sendrecvbuf[buf_index], 8); buf_index += 8;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int fxindexOut;
+int parmidxOut;
+bool retval = GetTCPFXParm(project, track, index, &fxindexOut, &parmidxOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &fxindexOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &parmidxOut, 4); buf_index += 4;
+return buf_index; 
+}
+
+int call_GetTempoMatchPlayRate() {
+int buf_index = 4;
+PCM_source* source; memcpy(&source, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double srcscale = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+double position = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+double mult = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+double rateOut;
+double targetlenOut;
+bool retval = GetTempoMatchPlayRate(source, srcscale, position, mult, &rateOut, &targetlenOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &rateOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &targetlenOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_GetTempoTimeSigMarker() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int ptidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double timeposOut;
+int measureposOut;
+double beatposOut;
+double bpmOut;
+int timesig_numOut;
+int timesig_denomOut;
+bool lineartempoOut;
+bool retval = GetTempoTimeSigMarker(proj, ptidx, &timeposOut, &measureposOut, &beatposOut, &bpmOut, &timesig_numOut, &timesig_denomOut, &lineartempoOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &timeposOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &measureposOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &beatposOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &bpmOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &timesig_numOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &timesig_denomOut, 4); buf_index += 4;
+sendrecvbuf[buf_index] = lineartempoOut ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
@@ -2272,10 +2586,23 @@ memcpy(&sendrecvbuf[buf_index], retval, 1 + strlen(retval)); buf_index += 1 + st
 return buf_index; 
 }
 
+int call_GetTrackMIDINoteRange() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int note_loOut;
+int note_hiOut;
+GetTrackMIDINoteRange(proj, track, &note_loOut, &note_hiOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &note_loOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &note_hiOut, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_GetTrackName() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
-bool retval = GetTrackName(track, charbuf0, 4096);
+bool retval = GetTrackName(track, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -2305,10 +2632,36 @@ int call_GetTrackReceiveName() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int recv_index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = GetTrackReceiveName(track, recv_index, charbuf0, 4096);
+bool retval = GetTrackReceiveName(track, recv_index, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_GetTrackReceiveUIMute() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int recv_index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool muteOut;
+bool retval = GetTrackReceiveUIMute(track, recv_index, &muteOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+sendrecvbuf[buf_index] = muteOut ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_GetTrackReceiveUIVolPan() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int recv_index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double volumeOut;
+double panOut;
+bool retval = GetTrackReceiveUIVolPan(track, recv_index, &volumeOut, &panOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &volumeOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &panOut, 8); buf_index += 8;
 return buf_index; 
 }
 
@@ -2328,10 +2681,47 @@ int call_GetTrackSendName() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int send_index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = GetTrackSendName(track, send_index, charbuf0, 4096);
+bool retval = GetTrackSendName(track, send_index, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_GetTrackSendUIMute() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int send_index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool muteOut;
+bool retval = GetTrackSendUIMute(track, send_index, &muteOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+sendrecvbuf[buf_index] = muteOut ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_GetTrackSendUIVolPan() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int send_index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double volumeOut;
+double panOut;
+bool retval = GetTrackSendUIVolPan(track, send_index, &volumeOut, &panOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &volumeOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &panOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_GetTrackState() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int flagsOut;
+const char* retval = GetTrackState(track, &flagsOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], retval, 1 + strlen(retval)); buf_index += 1 + strlen(retval);
+memcpy(&sendrecvbuf[buf_index], &flagsOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -2339,10 +2729,49 @@ int call_GetTrackStateChunk() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool isundoOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = GetTrackStateChunk(track, charbuf0, 4096, isundoOptional);
+bool retval = GetTrackStateChunk(track, charbuf0, 65535, isundoOptional);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_GetTrackUIMute() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+bool muteOut;
+bool retval = GetTrackUIMute(track, &muteOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+sendrecvbuf[buf_index] = muteOut ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_GetTrackUIPan() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double pan1Out;
+double pan2Out;
+int panmodeOut;
+bool retval = GetTrackUIPan(track, &pan1Out, &pan2Out, &panmodeOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &pan1Out, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &pan2Out, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &panmodeOut, 4); buf_index += 4;
+return buf_index; 
+}
+
+int call_GetTrackUIVolPan() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double volumeOut;
+double panOut;
+bool retval = GetTrackUIVolPan(track, &volumeOut, &panOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &volumeOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &panOut, 8); buf_index += 8;
 return buf_index; 
 }
 
@@ -2362,7 +2791,7 @@ int buf_index = 4;
 const char* title = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(title);
 int num_inputs = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 const char* captions_csv = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(captions_csv);
-bool retval = GetUserInputs(title, num_inputs, captions_csv, charbuf0, 4096);
+bool retval = GetUserInputs(title, num_inputs, captions_csv, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -2386,6 +2815,17 @@ int region_index = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 bool use_timeline_order = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
 GoToRegion(proj, region_index, use_timeline_order);
 buf_index = 0;
+return buf_index; 
+}
+
+int call_GR_SelectColor() {
+int buf_index = 4;
+HWND hwnd; memcpy(&hwnd, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int colorOut;
+int retval = GR_SelectColor(hwnd, &colorOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &colorOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -2439,7 +2879,7 @@ return buf_index;
 int call_image_resolve_fn() {
 int buf_index = 4;
 const char* in = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(in);
-image_resolve_fn(in, charbuf0, 4096);
+image_resolve_fn(in, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -2521,6 +2961,26 @@ bool mixer = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
 bool retval = IsTrackVisible(track, mixer);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_LICE_ClipLine() {
+int buf_index = 4;
+int pX1Out;
+int pY1Out;
+int pX2Out;
+int pY2Out;
+int xLo = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int yLo = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int xHi = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int yHi = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool retval = LICE_ClipLine(&pX1Out, &pY1Out, &pX2Out, &pY2Out, xLo, yLo, xHi, yHi);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &pX1Out, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &pY1Out, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &pX2Out, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &pY2Out, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -2663,6 +3123,21 @@ memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 return buf_index; 
 }
 
+int call_MIDI_CountEvts() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int notecntOut;
+int ccevtcntOut;
+int textsyxevtcntOut;
+int retval = MIDI_CountEvts(take, &notecntOut, &ccevtcntOut, &textsyxevtcntOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &notecntOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &ccevtcntOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &textsyxevtcntOut, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_MIDI_DeleteCC() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -2743,14 +3218,75 @@ memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 return buf_index; 
 }
 
+int call_MIDI_GetCC() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int ccidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool selectedOut;
+bool mutedOut;
+double ppqposOut;
+int chanmsgOut;
+int chanOut;
+int msg2Out;
+int msg3Out;
+bool retval = MIDI_GetCC(take, ccidx, &selectedOut, &mutedOut, &ppqposOut, &chanmsgOut, &chanOut, &msg2Out, &msg3Out);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+sendrecvbuf[buf_index] = selectedOut ? 1 : 0; buf_index += 1;
+sendrecvbuf[buf_index] = mutedOut ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &ppqposOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &chanmsgOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &chanOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &msg2Out, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &msg3Out, 4); buf_index += 4;
+return buf_index; 
+}
+
+int call_MIDI_GetGrid() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double swingOutOptional;
+double noteLenOutOptional;
+double retval = MIDI_GetGrid(take, &swingOutOptional, &noteLenOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &swingOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &noteLenOutOptional, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_MIDI_GetHash() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool notesonly = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = MIDI_GetHash(take, notesonly, charbuf0, 4096);
+bool retval = MIDI_GetHash(take, notesonly, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_MIDI_GetNote() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int noteidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool selectedOut;
+bool mutedOut;
+double startppqposOut;
+double endppqposOut;
+int chanOut;
+int pitchOut;
+int velOut;
+bool retval = MIDI_GetNote(take, noteidx, &selectedOut, &mutedOut, &startppqposOut, &endppqposOut, &chanOut, &pitchOut, &velOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+sendrecvbuf[buf_index] = selectedOut ? 1 : 0; buf_index += 1;
+sendrecvbuf[buf_index] = mutedOut ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &startppqposOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &endppqposOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &chanOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &pitchOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &velOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -2814,11 +3350,25 @@ memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
 }
 
+int call_MIDI_GetScale() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int rootOut;
+int scaleOut;
+bool retval = MIDI_GetScale(take, &rootOut, &scaleOut, charbuf0, 65535);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &rootOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &scaleOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
 int call_MIDI_GetTrackHash() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 bool notesonly = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
-bool retval = MIDI_GetTrackHash(track, notesonly, charbuf0, 4096);
+bool retval = MIDI_GetTrackHash(track, notesonly, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -2947,7 +3497,7 @@ int call_MIDIEditor_GetSetting_str() {
 int buf_index = 4;
 HWND midieditor; memcpy(&midieditor, &sendrecvbuf[buf_index], 8); buf_index += 8;
 const char* setting_desc = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(setting_desc);
-bool retval = MIDIEditor_GetSetting_str(midieditor, setting_desc, charbuf0, 4096);
+bool retval = MIDIEditor_GetSetting_str(midieditor, setting_desc, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -3207,6 +3757,21 @@ buf_index = 0;
 return buf_index; 
 }
 
+int call_PCM_Source_GetSectionInfo() {
+int buf_index = 4;
+PCM_source* src; memcpy(&src, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double offsOut;
+double lenOut;
+bool revOut;
+bool retval = PCM_Source_GetSectionInfo(src, &offsOut, &lenOut, &revOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &offsOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &lenOut, 8); buf_index += 8;
+sendrecvbuf[buf_index] = revOut ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
 int call_PluginWantsAlwaysRunFx() {
 int buf_index = 4;
 int amt = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
@@ -3251,7 +3816,7 @@ return buf_index;
 int call_relative_fn() {
 int buf_index = 4;
 const char* in = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(in);
-relative_fn(in, charbuf0, 4096);
+relative_fn(in, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -3293,7 +3858,7 @@ return buf_index;
 int call_resolve_fn() {
 int buf_index = 4;
 const char* in = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(in);
-resolve_fn(in, charbuf0, 4096);
+resolve_fn(in, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -3303,7 +3868,7 @@ int call_resolve_fn2() {
 int buf_index = 4;
 const char* in = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(in);
 const char* checkSubDirOptional = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(checkSubDirOptional);
-resolve_fn2(in, charbuf0, 4096, checkSubDirOptional);
+resolve_fn2(in, charbuf0, 65535, checkSubDirOptional);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -3948,7 +4513,7 @@ MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 double val = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
-bool retval = TakeFX_FormatParamValue(take, fx, param, val, charbuf0, 4096);
+bool retval = TakeFX_FormatParamValue(take, fx, param, val, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -3961,7 +4526,7 @@ MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 double value = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
-bool retval = TakeFX_FormatParamValueNormalized(take, fx, param, value, charbuf0, 4096);
+bool retval = TakeFX_FormatParamValueNormalized(take, fx, param, value, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4023,7 +4588,7 @@ int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TakeFX_GetFormattedParamValue(take, fx, param, charbuf0, 4096);
+bool retval = TakeFX_GetFormattedParamValue(take, fx, param, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4034,10 +4599,24 @@ int call_TakeFX_GetFXName() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TakeFX_GetFXName(take, fx, charbuf0, 4096);
+bool retval = TakeFX_GetFXName(take, fx, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_TakeFX_GetIOSize() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int inputPinsOutOptional;
+int outputPinsOutOptional;
+int retval = TakeFX_GetIOSize(take, fx, &inputPinsOutOptional, &outputPinsOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &inputPinsOutOptional, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &outputPinsOutOptional, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -4046,7 +4625,7 @@ int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 const char* parmname = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(parmname);
-bool retval = TakeFX_GetNamedConfigParm(take, fx, parmname, charbuf0, 4096);
+bool retval = TakeFX_GetNamedConfigParm(take, fx, parmname, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4073,12 +4652,63 @@ sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
+int call_TakeFX_GetParam() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double minvalOut;
+double maxvalOut;
+double retval = TakeFX_GetParam(take, fx, param, &minvalOut, &maxvalOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &minvalOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &maxvalOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_TakeFX_GetParameterStepSizes() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double stepOut;
+double smallstepOut;
+double largestepOut;
+bool istoggleOut;
+bool retval = TakeFX_GetParameterStepSizes(take, fx, param, &stepOut, &smallstepOut, &largestepOut, &istoggleOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &stepOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &smallstepOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &largestepOut, 8); buf_index += 8;
+sendrecvbuf[buf_index] = istoggleOut ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_TakeFX_GetParamEx() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double minvalOut;
+double maxvalOut;
+double midvalOut;
+double retval = TakeFX_GetParamEx(take, fx, param, &minvalOut, &maxvalOut, &midvalOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &minvalOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &maxvalOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &midvalOut, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_TakeFX_GetParamName() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TakeFX_GetParamName(take, fx, param, charbuf0, 4096);
+bool retval = TakeFX_GetParamName(take, fx, param, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4096,14 +4726,40 @@ memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
 }
 
+int call_TakeFX_GetPinMappings() {
+int buf_index = 4;
+MediaItem_Take* tr; memcpy(&tr, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int isOutput = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int pin = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int high32OutOptional;
+int retval = TakeFX_GetPinMappings(tr, fx, isOutput, pin, &high32OutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &high32OutOptional, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_TakeFX_GetPreset() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TakeFX_GetPreset(take, fx, charbuf0, 4096);
+bool retval = TakeFX_GetPreset(take, fx, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_TakeFX_GetPresetIndex() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int numberOfPresetsOut;
+int retval = TakeFX_GetPresetIndex(take, fx, &numberOfPresetsOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &numberOfPresetsOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -4111,7 +4767,7 @@ int call_TakeFX_GetUserPresetFilename() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-TakeFX_GetUserPresetFilename(take, fx, charbuf0, 4096);
+TakeFX_GetUserPresetFilename(take, fx, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -4277,6 +4933,24 @@ memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
 }
 
+int call_TimeMap2_timeToBeats() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double tpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+int measuresOutOptional;
+int cmlOutOptional;
+double fullbeatsOutOptional;
+int cdenomOutOptional;
+double retval = TimeMap2_timeToBeats(proj, tpos, &measuresOutOptional, &cmlOutOptional, &fullbeatsOutOptional, &cdenomOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &measuresOutOptional, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &cmlOutOptional, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &fullbeatsOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &cdenomOutOptional, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_TimeMap2_timeToQN() {
 int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -4284,6 +4958,17 @@ double tpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
 double retval = TimeMap2_timeToQN(proj, tpos);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_TimeMap_curFrameRate() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+bool dropFrameOutOptional;
+double retval = TimeMap_curFrameRate(proj, &dropFrameOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+sendrecvbuf[buf_index] = dropFrameOutOptional ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
@@ -4296,14 +4981,63 @@ memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
 }
 
+int call_TimeMap_GetMeasureInfo() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int measure = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double qn_startOut;
+double qn_endOut;
+int timesig_numOut;
+int timesig_denomOut;
+double tempoOut;
+double retval = TimeMap_GetMeasureInfo(proj, measure, &qn_startOut, &qn_endOut, &timesig_numOut, &timesig_denomOut, &tempoOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &qn_startOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &qn_endOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &timesig_numOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &timesig_denomOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &tempoOut, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_TimeMap_GetMetronomePattern() {
 int buf_index = 4;
 ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
 double time = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
-int retval = TimeMap_GetMetronomePattern(proj, time, charbuf0, 4096);
+int retval = TimeMap_GetMetronomePattern(proj, time, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_TimeMap_GetTimeSigAtTime() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double time = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+int timesig_numOut;
+int timesig_denomOut;
+double tempoOut;
+TimeMap_GetTimeSigAtTime(proj, time, &timesig_numOut, &timesig_denomOut, &tempoOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &timesig_numOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &timesig_denomOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &tempoOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_TimeMap_QNToMeasures() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double qn = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+double qnMeasureStartOutOptional;
+double qnMeasureEndOutOptional;
+int retval = TimeMap_QNToMeasures(proj, qn, &qnMeasureStartOutOptional, &qnMeasureEndOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &qnMeasureStartOutOptional, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &qnMeasureEndOutOptional, 8); buf_index += 8;
 return buf_index; 
 }
 
@@ -4416,7 +5150,7 @@ MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 double val = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
-bool retval = TrackFX_FormatParamValue(track, fx, param, val, charbuf0, 4096);
+bool retval = TrackFX_FormatParamValue(track, fx, param, val, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4429,7 +5163,7 @@ MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 double value = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
-bool retval = TrackFX_FormatParamValueNormalized(track, fx, param, value, charbuf0, 4096);
+bool retval = TrackFX_FormatParamValueNormalized(track, fx, param, value, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4497,6 +5231,25 @@ sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
+int call_TrackFX_GetEQParam() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fxidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int paramidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int bandtypeOut;
+int bandidxOut;
+int paramtypeOut;
+double normvalOut;
+bool retval = TrackFX_GetEQParam(track, fxidx, paramidx, &bandtypeOut, &bandidxOut, &paramtypeOut, &normvalOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &bandtypeOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &bandidxOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &paramtypeOut, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &normvalOut, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_TrackFX_GetFloatingWindow() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -4512,7 +5265,7 @@ int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TrackFX_GetFormattedParamValue(track, fx, param, charbuf0, 4096);
+bool retval = TrackFX_GetFormattedParamValue(track, fx, param, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4523,7 +5276,7 @@ int call_TrackFX_GetFXName() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TrackFX_GetFXName(track, fx, charbuf0, 4096);
+bool retval = TrackFX_GetFXName(track, fx, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4539,12 +5292,26 @@ memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 return buf_index; 
 }
 
+int call_TrackFX_GetIOSize() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int inputPinsOutOptional;
+int outputPinsOutOptional;
+int retval = TrackFX_GetIOSize(track, fx, &inputPinsOutOptional, &outputPinsOutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &inputPinsOutOptional, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &outputPinsOutOptional, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_TrackFX_GetNamedConfigParm() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 const char* parmname = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(parmname);
-bool retval = TrackFX_GetNamedConfigParm(track, fx, parmname, charbuf0, 4096);
+bool retval = TrackFX_GetNamedConfigParm(track, fx, parmname, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4571,12 +5338,63 @@ sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
+int call_TrackFX_GetParam() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double minvalOut;
+double maxvalOut;
+double retval = TrackFX_GetParam(track, fx, param, &minvalOut, &maxvalOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &minvalOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &maxvalOut, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_TrackFX_GetParameterStepSizes() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double stepOut;
+double smallstepOut;
+double largestepOut;
+bool istoggleOut;
+bool retval = TrackFX_GetParameterStepSizes(track, fx, param, &stepOut, &smallstepOut, &largestepOut, &istoggleOut);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+memcpy(&sendrecvbuf[buf_index], &stepOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &smallstepOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &largestepOut, 8); buf_index += 8;
+sendrecvbuf[buf_index] = istoggleOut ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_TrackFX_GetParamEx() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double minvalOut;
+double maxvalOut;
+double midvalOut;
+double retval = TrackFX_GetParamEx(track, fx, param, &minvalOut, &maxvalOut, &midvalOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &minvalOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &maxvalOut, 8); buf_index += 8;
+memcpy(&sendrecvbuf[buf_index], &midvalOut, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_TrackFX_GetParamName() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 int param = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TrackFX_GetParamName(track, fx, param, charbuf0, 4096);
+bool retval = TrackFX_GetParamName(track, fx, param, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
@@ -4594,14 +5412,40 @@ memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
 }
 
+int call_TrackFX_GetPinMappings() {
+int buf_index = 4;
+MediaTrack* tr; memcpy(&tr, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int isOutput = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int pin = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int high32OutOptional;
+int retval = TrackFX_GetPinMappings(tr, fx, isOutput, pin, &high32OutOptional);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &high32OutOptional, 4); buf_index += 4;
+return buf_index; 
+}
+
 int call_TrackFX_GetPreset() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-bool retval = TrackFX_GetPreset(track, fx, charbuf0, 4096);
+bool retval = TrackFX_GetPreset(track, fx, charbuf0, 65535);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
+return buf_index; 
+}
+
+int call_TrackFX_GetPresetIndex() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int numberOfPresetsOut;
+int retval = TrackFX_GetPresetIndex(track, fx, &numberOfPresetsOut);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
+memcpy(&sendrecvbuf[buf_index], &numberOfPresetsOut, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -4627,7 +5471,7 @@ int call_TrackFX_GetUserPresetFilename() {
 int buf_index = 4;
 MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int fx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
-TrackFX_GetUserPresetFilename(track, fx, charbuf0, 4096);
+TrackFX_GetUserPresetFilename(track, fx, charbuf0, 65535);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], charbuf0, 1 + strlen(charbuf0)); buf_index += 1 + strlen(charbuf0);
 return buf_index; 
@@ -4959,9 +5803,11 @@ functions[16] = call_BypassFxAllTracks;
 functions[17] = call_ClearAllRecArmed;
 functions[18] = call_ClearConsole;
 functions[19] = call_ClearPeakCache;
+functions[20] = call_ColorFromNative;
 functions[21] = call_ColorToNative;
 functions[22] = call_CountEnvelopePoints;
 functions[23] = call_CountMediaItems;
+functions[24] = call_CountProjectMarkers;
 functions[25] = call_CountSelectedMediaItems;
 functions[26] = call_CountSelectedTracks;
 functions[27] = call_CountSelectedTracks2;
@@ -5037,6 +5883,7 @@ functions[98] = call_DeleteTrack;
 functions[99] = call_DeleteTrackMediaItem;
 functions[100] = call_DestroyAudioAccessor;
 functions[101] = call_Dock_UpdateDockID;
+functions[102] = call_DockIsChildOfDock;
 functions[103] = call_DockWindowActivate;
 functions[104] = call_DockWindowAdd;
 functions[105] = call_DockWindowAddEx;
@@ -5052,7 +5899,10 @@ functions[119] = call_EnumProjExtState;
 functions[120] = call_EnumRegionRenderMatrix;
 functions[121] = call_EnumTrackMIDIProgramNames;
 functions[122] = call_EnumTrackMIDIProgramNamesEx;
+functions[123] = call_Envelope_Evaluate;
 functions[124] = call_Envelope_FormatValue;
+functions[125] = call_Envelope_GetParentTake;
+functions[126] = call_Envelope_GetParentTrack;
 functions[127] = call_Envelope_SortPoints;
 functions[128] = call_ExecProcess;
 functions[129] = call_file_exists;
@@ -5076,19 +5926,24 @@ functions[148] = call_GetCursorPositionEx;
 functions[149] = call_GetDisplayedMediaItemColor;
 functions[150] = call_GetDisplayedMediaItemColor2;
 functions[151] = call_GetEnvelopeName;
+functions[152] = call_GetEnvelopePoint;
 functions[153] = call_GetEnvelopePointByTime;
 functions[154] = call_GetEnvelopeScalingMode;
 functions[155] = call_GetEnvelopeStateChunk;
 functions[156] = call_GetExePath;
 functions[157] = call_GetExtState;
+functions[158] = call_GetFocusedFX;
 functions[159] = call_GetFreeDiskSpaceForRecordPath;
 functions[160] = call_GetFXEnvelope;
 functions[161] = call_GetGlobalAutomationOverride;
 functions[162] = call_GetHZoomLevel;
 functions[163] = call_GetInputChannelName;
+functions[164] = call_GetInputOutputLatency;
 functions[166] = call_GetItemProjectContext;
 functions[167] = call_GetItemStateChunk;
 functions[168] = call_GetLastColorThemeFile;
+functions[169] = call_GetLastMarkerAndCurRegion;
+functions[170] = call_GetLastTouchedFX;
 functions[171] = call_GetLastTouchedTrack;
 functions[172] = call_GetMainHwnd;
 functions[173] = call_GetMasterMuteSoloFlags;
@@ -5107,6 +5962,7 @@ functions[186] = call_GetMediaItemTake_Track;
 functions[188] = call_GetMediaItemTakeInfo_Value;
 functions[189] = call_GetMediaItemTrack;
 functions[190] = call_GetMediaSourceFileName;
+functions[191] = call_GetMediaSourceLength;
 functions[192] = call_GetMediaSourceNumChannels;
 functions[193] = call_GetMediaSourceParent;
 functions[194] = call_GetMediaSourceSampleRate;
@@ -5116,6 +5972,7 @@ functions[197] = call_GetMIDIInputName;
 functions[198] = call_GetMIDIOutputName;
 functions[199] = call_GetMixerScroll;
 functions[200] = call_GetMouseModifier;
+functions[201] = call_GetMousePosition;
 functions[202] = call_GetNumAudioInputs;
 functions[203] = call_GetNumAudioOutputs;
 functions[204] = call_GetNumMIDIInputs;
@@ -5140,6 +5997,8 @@ functions[222] = call_GetProjectPath;
 functions[223] = call_GetProjectPathEx;
 functions[224] = call_GetProjectStateChangeCount;
 functions[225] = call_GetProjectTimeOffset;
+functions[226] = call_GetProjectTimeSignature;
+functions[227] = call_GetProjectTimeSignature2;
 functions[228] = call_GetProjExtState;
 functions[229] = call_GetResourcePath;
 functions[230] = call_GetSelectedEnvelope;
@@ -5147,6 +6006,9 @@ functions[231] = call_GetSelectedMediaItem;
 functions[232] = call_GetSelectedTrack;
 functions[233] = call_GetSelectedTrack2;
 functions[234] = call_GetSelectedTrackEnvelope;
+functions[235] = call_GetSet_ArrangeView2;
+functions[236] = call_GetSet_LoopTimeRange;
+functions[237] = call_GetSet_LoopTimeRange2;
 functions[238] = call_GetSetEnvelopeState;
 functions[239] = call_GetSetEnvelopeState2;
 functions[240] = call_GetSetItemState;
@@ -5165,7 +6027,11 @@ functions[254] = call_GetTakeEnvelope;
 functions[255] = call_GetTakeEnvelopeByName;
 functions[256] = call_GetTakeName;
 functions[257] = call_GetTakeNumStretchMarkers;
+functions[258] = call_GetTakeStretchMarker;
 functions[259] = call_GetTakeStretchMarkerSlope;
+functions[260] = call_GetTCPFXParm;
+functions[261] = call_GetTempoMatchPlayRate;
+functions[262] = call_GetTempoTimeSigMarker;
 functions[263] = call_GetToggleCommandState;
 functions[264] = call_GetToggleCommandStateEx;
 functions[265] = call_GetTooltipWindow;
@@ -5179,17 +6045,27 @@ functions[272] = call_GetTrackEnvelopeByName;
 functions[274] = call_GetTrackMediaItem;
 functions[276] = call_GetTrackMIDINoteName;
 functions[277] = call_GetTrackMIDINoteNameEx;
+functions[278] = call_GetTrackMIDINoteRange;
 functions[279] = call_GetTrackName;
 functions[280] = call_GetTrackNumMediaItems;
 functions[281] = call_GetTrackNumSends;
 functions[282] = call_GetTrackReceiveName;
+functions[283] = call_GetTrackReceiveUIMute;
+functions[284] = call_GetTrackReceiveUIVolPan;
 functions[285] = call_GetTrackSendInfo_Value;
 functions[286] = call_GetTrackSendName;
+functions[287] = call_GetTrackSendUIMute;
+functions[288] = call_GetTrackSendUIVolPan;
+functions[289] = call_GetTrackState;
 functions[290] = call_GetTrackStateChunk;
+functions[291] = call_GetTrackUIMute;
+functions[292] = call_GetTrackUIPan;
+functions[293] = call_GetTrackUIVolPan;
 functions[294] = call_GetUserFileNameForRead;
 functions[295] = call_GetUserInputs;
 functions[296] = call_GoToMarker;
 functions[297] = call_GoToRegion;
+functions[298] = call_GR_SelectColor;
 functions[299] = call_GSC_mainwnd;
 functions[301] = call_HasExtState;
 functions[302] = call_HasTrackMIDIPrograms;
@@ -5204,6 +6080,7 @@ functions[311] = call_IsMediaItemSelected;
 functions[312] = call_IsProjectDirty;
 functions[313] = call_IsTrackSelected;
 functions[314] = call_IsTrackVisible;
+functions[323] = call_LICE_ClipLine;
 functions[324] = call_Loop_OnArrow;
 functions[325] = call_Main_OnCommand;
 functions[326] = call_Main_OnCommandEx;
@@ -5219,6 +6096,7 @@ functions[335] = call_Master_NormalizePlayRate;
 functions[336] = call_Master_NormalizeTempo;
 functions[337] = call_MB;
 functions[338] = call_MediaItemDescendsFromTrack;
+functions[339] = call_MIDI_CountEvts;
 functions[340] = call_MIDI_DeleteCC;
 functions[341] = call_MIDI_DeleteEvt;
 functions[342] = call_MIDI_DeleteNote;
@@ -5227,13 +6105,17 @@ functions[344] = call_MIDI_EnumSelCC;
 functions[345] = call_MIDI_EnumSelEvts;
 functions[346] = call_MIDI_EnumSelNotes;
 functions[347] = call_MIDI_EnumSelTextSysexEvts;
+functions[349] = call_MIDI_GetCC;
+functions[351] = call_MIDI_GetGrid;
 functions[352] = call_MIDI_GetHash;
+functions[353] = call_MIDI_GetNote;
 functions[354] = call_MIDI_GetPPQPos_EndOfMeasure;
 functions[355] = call_MIDI_GetPPQPos_StartOfMeasure;
 functions[356] = call_MIDI_GetPPQPosFromProjQN;
 functions[357] = call_MIDI_GetPPQPosFromProjTime;
 functions[358] = call_MIDI_GetProjQNFromPPQPos;
 functions[359] = call_MIDI_GetProjTimeFromPPQPos;
+functions[360] = call_MIDI_GetScale;
 functions[362] = call_MIDI_GetTrackHash;
 functions[363] = call_MIDI_InsertCC;
 functions[364] = call_MIDI_InsertEvt;
@@ -5275,6 +6157,7 @@ functions[407] = call_PCM_Source_CreateFromFile;
 functions[408] = call_PCM_Source_CreateFromFileEx;
 functions[409] = call_PCM_Source_CreateFromType;
 functions[410] = call_PCM_Source_Destroy;
+functions[412] = call_PCM_Source_GetSectionInfo;
 functions[413] = call_PluginWantsAlwaysRunFx;
 functions[414] = call_PreventUIRefresh;
 functions[415] = call_ReaScriptError;
@@ -5354,12 +6237,18 @@ functions[493] = call_TakeFX_GetEnvelope;
 functions[494] = call_TakeFX_GetFloatingWindow;
 functions[495] = call_TakeFX_GetFormattedParamValue;
 functions[497] = call_TakeFX_GetFXName;
+functions[498] = call_TakeFX_GetIOSize;
 functions[499] = call_TakeFX_GetNamedConfigParm;
 functions[500] = call_TakeFX_GetNumParams;
 functions[501] = call_TakeFX_GetOpen;
+functions[502] = call_TakeFX_GetParam;
+functions[503] = call_TakeFX_GetParameterStepSizes;
+functions[504] = call_TakeFX_GetParamEx;
 functions[505] = call_TakeFX_GetParamName;
 functions[506] = call_TakeFX_GetParamNormalized;
+functions[507] = call_TakeFX_GetPinMappings;
 functions[508] = call_TakeFX_GetPreset;
+functions[509] = call_TakeFX_GetPresetIndex;
 functions[510] = call_TakeFX_GetUserPresetFilename;
 functions[511] = call_TakeFX_NavigatePresets;
 functions[512] = call_TakeFX_SetEnabled;
@@ -5376,9 +6265,14 @@ functions[522] = call_time_precise;
 functions[524] = call_TimeMap2_GetDividedBpmAtTime;
 functions[525] = call_TimeMap2_GetNextChangeTime;
 functions[526] = call_TimeMap2_QNToTime;
+functions[527] = call_TimeMap2_timeToBeats;
 functions[528] = call_TimeMap2_timeToQN;
+functions[529] = call_TimeMap_curFrameRate;
 functions[530] = call_TimeMap_GetDividedBpmAtTime;
+functions[531] = call_TimeMap_GetMeasureInfo;
 functions[532] = call_TimeMap_GetMetronomePattern;
+functions[533] = call_TimeMap_GetTimeSigAtTime;
+functions[534] = call_TimeMap_QNToMeasures;
 functions[535] = call_TimeMap_QNToTime;
 functions[536] = call_TimeMap_QNToTime_abs;
 functions[537] = call_TimeMap_timeToQN;
@@ -5397,16 +6291,23 @@ functions[549] = call_TrackFX_GetCount;
 functions[550] = call_TrackFX_GetEnabled;
 functions[551] = call_TrackFX_GetEQ;
 functions[552] = call_TrackFX_GetEQBandEnabled;
+functions[553] = call_TrackFX_GetEQParam;
 functions[554] = call_TrackFX_GetFloatingWindow;
 functions[555] = call_TrackFX_GetFormattedParamValue;
 functions[557] = call_TrackFX_GetFXName;
 functions[558] = call_TrackFX_GetInstrument;
+functions[559] = call_TrackFX_GetIOSize;
 functions[560] = call_TrackFX_GetNamedConfigParm;
 functions[561] = call_TrackFX_GetNumParams;
 functions[562] = call_TrackFX_GetOpen;
+functions[563] = call_TrackFX_GetParam;
+functions[564] = call_TrackFX_GetParameterStepSizes;
+functions[565] = call_TrackFX_GetParamEx;
 functions[566] = call_TrackFX_GetParamName;
 functions[567] = call_TrackFX_GetParamNormalized;
+functions[568] = call_TrackFX_GetPinMappings;
 functions[569] = call_TrackFX_GetPreset;
+functions[570] = call_TrackFX_GetPresetIndex;
 functions[571] = call_TrackFX_GetRecChainVisible;
 functions[572] = call_TrackFX_GetRecCount;
 functions[573] = call_TrackFX_GetUserPresetFilename;
