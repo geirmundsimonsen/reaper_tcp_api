@@ -344,6 +344,24 @@ memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 return buf_index; 
 }
 
+int call_CreateNewMIDIItemInProj() {
+int buf_index = 4;
+MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double starttime = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+double endtime = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+bool qnInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* qnInOptional_pointer = nullptr;
+bool qnInOptional;
+if (qnInOptional_hasvalue) {
+  qnInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  qnInOptional_pointer = &qnInOptional;
+}
+MediaItem* retval = CreateNewMIDIItemInProj(track, starttime, endtime, qnInOptional_pointer);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+return buf_index; 
+}
+
 int call_CreateTakeAudioAccessor() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -917,6 +935,23 @@ int markrgnidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 bool retval = DeleteProjectMarkerByIndex(proj, markrgnidx);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_DeleteTakeStretchMarkers() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int idx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool countInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* countInOptional_pointer = nullptr;
+int countInOptional;
+if (countInOptional_hasvalue) {
+  countInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  countInOptional_pointer = &countInOptional;
+}
+int retval = DeleteTakeStretchMarkers(take, idx, countInOptional_pointer);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -3405,6 +3440,29 @@ sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
+int call_MIDI_InsertNote() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+bool selected = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool muted = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double startppqpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+double endppqpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+int chan = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int pitch = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+int vel = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool noSortInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* noSortInOptional_pointer = nullptr;
+bool noSortInOptional;
+if (noSortInOptional_hasvalue) {
+  noSortInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  noSortInOptional_pointer = &noSortInOptional;
+}
+bool retval = MIDI_InsertNote(take, selected, muted, startppqpos, endppqpos, chan, pitch, vel, noSortInOptional_pointer);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
 int call_MIDI_InsertTextSysexEvt() {
 int buf_index = 4;
 MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
@@ -3447,12 +3505,231 @@ sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 return buf_index; 
 }
 
+int call_MIDI_SetCC() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int ccidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool selectedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* selectedInOptional_pointer = nullptr;
+bool selectedInOptional;
+if (selectedInOptional_hasvalue) {
+  selectedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  selectedInOptional_pointer = &selectedInOptional;
+}
+bool mutedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* mutedInOptional_pointer = nullptr;
+bool mutedInOptional;
+if (mutedInOptional_hasvalue) {
+  mutedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  mutedInOptional_pointer = &mutedInOptional;
+}
+bool ppqposInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double* ppqposInOptional_pointer = nullptr;
+double ppqposInOptional;
+if (ppqposInOptional_hasvalue) {
+  ppqposInOptional = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+  ppqposInOptional_pointer = &ppqposInOptional;
+}
+bool chanmsgInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* chanmsgInOptional_pointer = nullptr;
+int chanmsgInOptional;
+if (chanmsgInOptional_hasvalue) {
+  chanmsgInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  chanmsgInOptional_pointer = &chanmsgInOptional;
+}
+bool chanInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* chanInOptional_pointer = nullptr;
+int chanInOptional;
+if (chanInOptional_hasvalue) {
+  chanInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  chanInOptional_pointer = &chanInOptional;
+}
+bool msg2InOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* msg2InOptional_pointer = nullptr;
+int msg2InOptional;
+if (msg2InOptional_hasvalue) {
+  msg2InOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  msg2InOptional_pointer = &msg2InOptional;
+}
+bool msg3InOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* msg3InOptional_pointer = nullptr;
+int msg3InOptional;
+if (msg3InOptional_hasvalue) {
+  msg3InOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  msg3InOptional_pointer = &msg3InOptional;
+}
+bool noSortInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* noSortInOptional_pointer = nullptr;
+bool noSortInOptional;
+if (noSortInOptional_hasvalue) {
+  noSortInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  noSortInOptional_pointer = &noSortInOptional;
+}
+bool retval = MIDI_SetCC(take, ccidx, selectedInOptional_pointer, mutedInOptional_pointer, ppqposInOptional_pointer, chanmsgInOptional_pointer, chanInOptional_pointer, msg2InOptional_pointer, msg3InOptional_pointer, noSortInOptional_pointer);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_MIDI_SetEvt() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int evtidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool selectedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* selectedInOptional_pointer = nullptr;
+bool selectedInOptional;
+if (selectedInOptional_hasvalue) {
+  selectedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  selectedInOptional_pointer = &selectedInOptional;
+}
+bool mutedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* mutedInOptional_pointer = nullptr;
+bool mutedInOptional;
+if (mutedInOptional_hasvalue) {
+  mutedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  mutedInOptional_pointer = &mutedInOptional;
+}
+bool ppqposInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double* ppqposInOptional_pointer = nullptr;
+double ppqposInOptional;
+if (ppqposInOptional_hasvalue) {
+  ppqposInOptional = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+  ppqposInOptional_pointer = &ppqposInOptional;
+}
+const char* msgOptional = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(msgOptional);
+int msgOptional_sz = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool noSortInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* noSortInOptional_pointer = nullptr;
+bool noSortInOptional;
+if (noSortInOptional_hasvalue) {
+  noSortInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  noSortInOptional_pointer = &noSortInOptional;
+}
+bool retval = MIDI_SetEvt(take, evtidx, selectedInOptional_pointer, mutedInOptional_pointer, ppqposInOptional_pointer, msgOptional, msgOptional_sz, noSortInOptional_pointer);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
 int call_MIDI_SetItemExtents() {
 int buf_index = 4;
 MediaItem* item; memcpy(&item, &sendrecvbuf[buf_index], 8); buf_index += 8;
 double startQN = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
 double endQN = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
 bool retval = MIDI_SetItemExtents(item, startQN, endQN);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_MIDI_SetNote() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int noteidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool selectedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* selectedInOptional_pointer = nullptr;
+bool selectedInOptional;
+if (selectedInOptional_hasvalue) {
+  selectedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  selectedInOptional_pointer = &selectedInOptional;
+}
+bool mutedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* mutedInOptional_pointer = nullptr;
+bool mutedInOptional;
+if (mutedInOptional_hasvalue) {
+  mutedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  mutedInOptional_pointer = &mutedInOptional;
+}
+bool startppqposInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double* startppqposInOptional_pointer = nullptr;
+double startppqposInOptional;
+if (startppqposInOptional_hasvalue) {
+  startppqposInOptional = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+  startppqposInOptional_pointer = &startppqposInOptional;
+}
+bool endppqposInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double* endppqposInOptional_pointer = nullptr;
+double endppqposInOptional;
+if (endppqposInOptional_hasvalue) {
+  endppqposInOptional = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+  endppqposInOptional_pointer = &endppqposInOptional;
+}
+bool chanInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* chanInOptional_pointer = nullptr;
+int chanInOptional;
+if (chanInOptional_hasvalue) {
+  chanInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  chanInOptional_pointer = &chanInOptional;
+}
+bool pitchInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* pitchInOptional_pointer = nullptr;
+int pitchInOptional;
+if (pitchInOptional_hasvalue) {
+  pitchInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  pitchInOptional_pointer = &pitchInOptional;
+}
+bool velInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* velInOptional_pointer = nullptr;
+int velInOptional;
+if (velInOptional_hasvalue) {
+  velInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  velInOptional_pointer = &velInOptional;
+}
+bool noSortInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* noSortInOptional_pointer = nullptr;
+bool noSortInOptional;
+if (noSortInOptional_hasvalue) {
+  noSortInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  noSortInOptional_pointer = &noSortInOptional;
+}
+bool retval = MIDI_SetNote(take, noteidx, selectedInOptional_pointer, mutedInOptional_pointer, startppqposInOptional_pointer, endppqposInOptional_pointer, chanInOptional_pointer, pitchInOptional_pointer, velInOptional_pointer, noSortInOptional_pointer);
+buf_index = 0;
+sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
+return buf_index; 
+}
+
+int call_MIDI_SetTextSysexEvt() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int textsyxevtidx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool selectedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* selectedInOptional_pointer = nullptr;
+bool selectedInOptional;
+if (selectedInOptional_hasvalue) {
+  selectedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  selectedInOptional_pointer = &selectedInOptional;
+}
+bool mutedInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* mutedInOptional_pointer = nullptr;
+bool mutedInOptional;
+if (mutedInOptional_hasvalue) {
+  mutedInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  mutedInOptional_pointer = &mutedInOptional;
+}
+bool ppqposInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double* ppqposInOptional_pointer = nullptr;
+double ppqposInOptional;
+if (ppqposInOptional_hasvalue) {
+  ppqposInOptional = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+  ppqposInOptional_pointer = &ppqposInOptional;
+}
+bool typeInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* typeInOptional_pointer = nullptr;
+int typeInOptional;
+if (typeInOptional_hasvalue) {
+  typeInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  typeInOptional_pointer = &typeInOptional;
+}
+const char* msgOptional = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(msgOptional);
+int msgOptional_sz = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+bool noSortInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+bool* noSortInOptional_pointer = nullptr;
+bool noSortInOptional;
+if (noSortInOptional_hasvalue) {
+  noSortInOptional = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+  noSortInOptional_pointer = &noSortInOptional;
+}
+bool retval = MIDI_SetTextSysexEvt(take, textsyxevtidx, selectedInOptional_pointer, mutedInOptional_pointer, ppqposInOptional_pointer, typeInOptional_pointer, msgOptional, msgOptional_sz, noSortInOptional_pointer);
 buf_index = 0;
 sendrecvbuf[buf_index] = retval ? 1 : 0; buf_index += 1;
 return buf_index; 
@@ -3658,6 +3935,21 @@ bool play = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
 HWND retval = OpenMediaExplorer(mediafn, play);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_OscLocalMessageToHost() {
+int buf_index = 4;
+const char* message = &sendrecvbuf[buf_index]; buf_index += 1 + strlen(message);
+bool valueInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double* valueInOptional_pointer = nullptr;
+double valueInOptional;
+if (valueInOptional_hasvalue) {
+  valueInOptional = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+  valueInOptional_pointer = &valueInOptional;
+}
+OscLocalMessageToHost(message, valueInOptional_pointer);
+buf_index = 0;
 return buf_index; 
 }
 
@@ -4257,6 +4549,24 @@ MediaTrack* track; memcpy(&track, &sendrecvbuf[buf_index], 8); buf_index += 8;
 int addorremove = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
 SetRegionRenderMatrix(proj, regionindex, track, addorremove);
 buf_index = 0;
+return buf_index; 
+}
+
+int call_SetTakeStretchMarker() {
+int buf_index = 4;
+MediaItem_Take* take; memcpy(&take, &sendrecvbuf[buf_index], 8); buf_index += 8;
+int idx = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+double pos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+bool srcposInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+double* srcposInOptional_pointer = nullptr;
+double srcposInOptional;
+if (srcposInOptional_hasvalue) {
+  srcposInOptional = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+  srcposInOptional_pointer = &srcposInOptional;
+}
+int retval = SetTakeStretchMarker(take, idx, pos, srcposInOptional_pointer);
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 4); buf_index += 4;
 return buf_index; 
 }
 
@@ -4898,6 +5208,23 @@ return buf_index;
 int call_time_precise() {
 int buf_index = 4;
 double retval = time_precise();
+buf_index = 0;
+memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
+return buf_index; 
+}
+
+int call_TimeMap2_beatsToTime() {
+int buf_index = 4;
+ReaProject* proj; memcpy(&proj, &sendrecvbuf[buf_index], 8); buf_index += 8;
+double tpos = *(double*)&sendrecvbuf[buf_index]; buf_index += 8;
+bool measuresInOptional_hasvalue = sendrecvbuf[buf_index] ? true : false; buf_index += 1;
+int* measuresInOptional_pointer = nullptr;
+int measuresInOptional;
+if (measuresInOptional_hasvalue) {
+  measuresInOptional = *(int*)&sendrecvbuf[buf_index]; buf_index += 4;
+  measuresInOptional_pointer = &measuresInOptional;
+}
+double retval = TimeMap2_beatsToTime(proj, tpos, measuresInOptional_pointer);
 buf_index = 0;
 memcpy(&sendrecvbuf[buf_index], &retval, 8); buf_index += 8;
 return buf_index; 
@@ -5818,6 +6145,7 @@ functions[31] = call_CountTempoTimeSigMarkers;
 functions[32] = call_CountTrackEnvelopes;
 functions[33] = call_CountTrackMediaItems;
 functions[34] = call_CountTracks;
+functions[35] = call_CreateNewMIDIItemInProj;
 functions[36] = call_CreateTakeAudioAccessor;
 functions[37] = call_CreateTrackAudioAccessor;
 functions[38] = call_CreateTrackSend;
@@ -5878,6 +6206,7 @@ functions[92] = call_DeleteEnvelopePointRange;
 functions[93] = call_DeleteExtState;
 functions[94] = call_DeleteProjectMarker;
 functions[95] = call_DeleteProjectMarkerByIndex;
+functions[96] = call_DeleteTakeStretchMarkers;
 functions[97] = call_DeleteTempoTimeSigMarker;
 functions[98] = call_DeleteTrack;
 functions[99] = call_DeleteTrackMediaItem;
@@ -6119,11 +6448,16 @@ functions[360] = call_MIDI_GetScale;
 functions[362] = call_MIDI_GetTrackHash;
 functions[363] = call_MIDI_InsertCC;
 functions[364] = call_MIDI_InsertEvt;
+functions[365] = call_MIDI_InsertNote;
 functions[366] = call_MIDI_InsertTextSysexEvt;
 functions[367] = call_midi_reinit;
 functions[368] = call_MIDI_SelectAll;
 functions[369] = call_MIDI_SetAllEvts;
+functions[370] = call_MIDI_SetCC;
+functions[371] = call_MIDI_SetEvt;
 functions[372] = call_MIDI_SetItemExtents;
+functions[373] = call_MIDI_SetNote;
+functions[374] = call_MIDI_SetTextSysexEvt;
 functions[375] = call_MIDI_Sort;
 functions[376] = call_MIDIEditor_GetActive;
 functions[377] = call_MIDIEditor_GetMode;
@@ -6147,6 +6481,7 @@ functions[395] = call_OnStopButton;
 functions[396] = call_OnStopButtonEx;
 functions[397] = call_OpenColorThemeFile;
 functions[398] = call_OpenMediaExplorer;
+functions[399] = call_OscLocalMessageToHost;
 functions[400] = call_parse_timestr;
 functions[401] = call_parse_timestr_len;
 functions[402] = call_parse_timestr_pos;
@@ -6205,6 +6540,7 @@ functions[458] = call_SetProjectMarkerByIndex;
 functions[459] = call_SetProjectMarkerByIndex2;
 functions[460] = call_SetProjExtState;
 functions[461] = call_SetRegionRenderMatrix;
+functions[462] = call_SetTakeStretchMarker;
 functions[463] = call_SetTakeStretchMarkerSlope;
 functions[464] = call_SetTempoTimeSigMarker;
 functions[465] = call_SetToggleCommandState;
@@ -6262,6 +6598,7 @@ functions[519] = call_TakeFX_SetPresetByIndex;
 functions[520] = call_TakeFX_Show;
 functions[521] = call_TakeIsMIDI;
 functions[522] = call_time_precise;
+functions[523] = call_TimeMap2_beatsToTime;
 functions[524] = call_TimeMap2_GetDividedBpmAtTime;
 functions[525] = call_TimeMap2_GetNextChangeTime;
 functions[526] = call_TimeMap2_QNToTime;
